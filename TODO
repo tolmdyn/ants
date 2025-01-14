@@ -1,0 +1,9 @@
+- rewrite agent to be more of a vehicle with a direction velocity and turning radius (e.g. rocket), rather than a randomly wiggling pixel.
+
+- fix /remove the broken weighted choice. maybe agent direction is determined less randomly and is drawn towards food.
+
+- rebuild the pheromone grid to have a variable gridsize, so each 'square' of the pheromone grid is a few pixels wide. Calculate dispersion separately
+
+- add better debugging support, and pause/slomo?
+
+- consider tracking progress of project in a write-up (.e.g what happened and decisions)

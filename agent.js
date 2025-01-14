@@ -31,7 +31,7 @@ export class Agent {
     }
   }
 
-  // Move once in a random direction, but not outside of bounds
+
   // move() {
   //   // Store prev x and y
   //   this.px = this.x;
