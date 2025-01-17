@@ -62,7 +62,7 @@ function draw() {
 
 
  
-  // ctx.fillStyle = "black";
+  // Draw the agents
   for (let i = 0; i < numAgents; i++) {
     ctx.fillStyle = agents[i].getColour();
     ctx.fillRect(agents[i].x, agents[i].y, 1, 1); 
