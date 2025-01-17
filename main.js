@@ -4,8 +4,8 @@ import { Grid, MAX_PHE } from './grid.js'
 
 const canvas = document.getElementById("pixelCanvas");
 
-const gridSize = 256; 
-const numAgents = 70;
+const gridSize = 512; 
+const numAgents = 20; //70
 
 canvas.width = gridSize;
 canvas.height = gridSize;
@@ -14,8 +14,8 @@ const ctx = canvas.getContext("2d");
 
 const grid = new Grid(gridSize, gridSize);
 
-const agents = Array.from({ length: numAgents }, () => new Agent(gridSize / 2, gridSize / 2, 500, grid));
-
+const agents = Array.from({ length: numAgents }, () => new Agent(gridSize / 2, gridSize / 2, Math.random() * 360, 5000, grid));
+console.log(agents)
 
 // const imageData = ctx.createImageData(gridSize, gridSize);
 // const data = imageData.data; // Access the pixel data array
@@ -70,7 +70,7 @@ function draw() {
   
 }
 
-const fps = 100; 
+const fps = 60; 
 const frameDuration = 1000 / fps; 
 let lastFrameTime = 0;
 

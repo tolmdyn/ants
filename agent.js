@@ -1,14 +1,30 @@
+// "Vehicle" based agent with momentum and angle.
+
+
 const State = {
   Seeking: 'Seeking',
   Returning: 'Returning',
 }
 
+// This shouldnt be here
 export let foodCollected = 0;
 
+let idCount = 0;
+
 export class Agent {
-  constructor(x, y, energy, grid) {
+  constructor(x, y, angle, energy, grid) {
+    this.id = idCount++;
     this.x = x; // default 0
     this.y = y; // default 0
+
+    this.angle = angle;
+    this.velocity = 0.5;
+
+    this.vx = 0;
+    this.vy = 0;
+
+    this.visionDistance = 80;
+
     this.homeX = x;
     this.homeY = y;
     this.energy = energy; // default to 500
@@ -31,139 +47,128 @@ export class Agent {
     }
   }
 
-
-  // move() {
-  //   // Store prev x and y
-  //   this.px = this.x;
-  //   this.py = this.y;
-
-  //   // Randomly choose a direction: -1, 0, or 1
-  //   const dx = Math.floor(Math.random() * 3) - 1;
-  //   const dy = Math.floor(Math.random() * 3) - 1;
-
-  //   const newX = this.x + dx;
-  //   const newY = this.y + dy;
-
-  //   // Update position while keeping it within bounds
-  //   if (this.grid.isPassable(newX, newY)){
-  //     this.grid.addPheromone(this.x, this.y, 'typeA', 20);
-
-  //     this.x = Math.max(0, Math.min(newX, 255)); 
-  //     this.y = Math.max(0, Math.min(newY, 255)); 
-  //   }
-
-  //   // Reduce energy
-  //   // this.energy -= 1;
-  // }
-
-  // Move once in a random direction, but not outside of bounds
-  // Prefer cells with typeB pheromone, then cells without typeA pheromone
   move() {
-    // Store prev x and y
-    // this.px = this.x;
-    // this.py = this.y;
+    const rad = (this.angle * Math.PI) / 180;
 
-    const directions = [
-      // { dx: 0, dy: 0 },  // Stay in place
-      { dx: -1, dy: 0 }, // Left
-      { dx: 1, dy: 0 },  // Right
-      { dx: 0, dy: -1 }, // Up
-      { dx: 0, dy: 1 },  // Down
-      { dx: -1, dy: -1 }, // Top-left
-      { dx: 1, dy: -1 }, // Top-right
-      { dx: -1, dy: 1 }, // Bottom-left
-      { dx: 1, dy: 1 },  // Bottom-right
-    ];
+    this.vx = Math.sin(rad) * this.velocity;
+    this.vy = Math.cos(rad) * this.velocity;
 
-    const neighbours = directions.map(({ dx, dy }) => {
-      const nx = this.x + dx;
-      const ny = this.y + dy;
+    this.x += this.vx;
+    this.y += this.vy;
 
-      if (this.grid.isInBounds(nx, ny) && this.grid.isPassable(nx, ny)) {
-        const pheromones = this.grid.getPheromones(nx, ny);
-        const typeB = pheromones?.typeB || 0;
-        const typeA = pheromones?.typeA || 0;
+    this.turn();
 
-        let weight = null;
-
-        if (this.state === State.Seeking) {
-          weight = (typeB * 2 + 1) / (typeA / 2 + 1);
-        } else if (this.state === State.Returning) {
-          const distanceToHome = Math.sqrt(
-            Math.pow(nx - this.homeX, 2) + Math.pow(ny - this.homeY, 2)
-          );
-          weight = (typeA + 1) / (typeB * 2 + 1) + 3 / (distanceToHome + 1);
-          //weight = distanceToHome;
-          
-        }
-
-        return { nx, ny, weight };
-      }
-
-      return null; // ignore impassable cells
-    })
-      .filter(cell => cell !== null);
-
-    if (neighbours.length > 0) {
-      const totalWeight = neighbours.reduce((sum, cell) => sum + cell.weight, 0);
-      const probabilities = neighbours.map(cell => cell.weight / totalWeight);
-
-      const selectedCell = this.weightedRandomChoice(neighbours, probabilities);
-
-      if (this.state === State.Seeking) {
-        this.grid.addPheromone(this.x, this.y, 'typeA', 20); 
-      } else if (this.state === State.Returning) {
-        this.grid.addPheromone(this.x, this.y, 'typeB', 50);
-      }
-      this.x = selectedCell.nx;
-      this.y = selectedCell.ny;
-    }
-
-
-    // this.energy -= 1;
+    this.energy -= 1;
   }
 
   moveReturning() {
 
   }
 
-  weightedRandomChoice(options, probabilities) {
-    const rand = Math.random();
+  turn() {
+    // add some randomness to the direction
+    this.angle += ((Math.random() * 5) - 2.5);
 
-    let cumulative = 0;
+    // if food is detected on the right side, then veer right
+    // or if food is detected on the left side, then veer left
+    // we do this by imagining a circle of vision around the agent. 
+    // Everything behind it (more than 90 degrees away from the direction it is facing) 
+    // is ignored. THen the remain space is partition so that everything from 0 to -90 
+    // degrees is left and 0 to 90 degrees is right. Then we check all the coordinated 
+    // in these spaces to see if food is present.
+    const rad = (this.angle * Math.PI) / 180;
+    const visionPoints = [];
 
-    for (let i = 0; i < options.length; i++) {
-      cumulative += probabilities[i];
-      if (rand <= cumulative) {
-        return options[i];
+    for (let d = 1; d <= this.visionDistance; d++) {
+      // scan a 90-degree arc in front (left and right)
+      // const offset = 90 / 2;
+      for (let offset = -85; offset <= 85; offset += 5) {
+        const scanAngle = rad + (offset * Math.PI) / 180;
+        const scanX = Math.round(this.x + Math.sin(scanAngle) * d);
+        const scanY = Math.round(this.y + Math.cos(scanAngle) * d);
+
+        visionPoints.push({ x: scanX, y: scanY, angleOffset: offset });
       }
     }
 
-    return options[options.length - 1]; // fallback?
+    if (this.state == State.Seeking) {
+      this.turnTowardsFood(visionPoints);
+    } else {
+      this.turnTowardsHome(visionPoints);
+    }
+
+    // Stop angle from going out of bounds
+    if (this.angle >= 360) {
+      this.angle -= 360;
+    } else if (this.angle < 0) {
+      this.angle += 360;
+    }
+  }
+
+  turnTowardsFood(visionPoints) {
+    // Determine if food in vision field
+    let leftFood = 0;
+    let rightFood = 0;
+
+    for (const point of visionPoints) {
+      if (this.grid.getFood(point.x, point.y) > 0) {
+        if (point.angleOffset < 0) {
+          leftFood += 1;
+        } else if (point.angleOffset > 0) {
+          rightFood += 1;
+        }
+      }
+    }
+
+    // Adjust angle based on detected food quantity
+    if (leftFood > rightFood) {
+      this.angle -= 5;
+    } else if (rightFood > leftFood) {
+      this.angle += 5;
+    }
+  }
+
+  turnTowardsHome(visionPoints) {
+    // Check if home is within vision
+    for (const point of visionPoints) {
+      if (
+        Math.abs(point.x - this.homeX) < 1 &&
+        Math.abs(point.y - this.homeY) < 1
+      ) {
+        this.angle += point.angleOffset > 0 ? 5 : -5; // Turn toward home
+        break;
+      }
+    }
   }
 
   // If the cell at which the agent is has food, take that food and return home
   checkFood() {
     // does cell have food
-    if (this.grid.getFood(this.x, this.y) > 0) {
-      console.log("FOOD", this.x, this.y)
+    // console.log(`Agent position: (${this.x}, ${this.y})`);
+    const gridX = Math.round(this.x);
+    const gridY = Math.round(this.y);
+
+    if (this.grid.getFood(gridX, gridY) > 0) {
+      console.log("Food collected at:", gridX, gridY, "by", this.id)
       // reduce food (take it)
-      this.grid.removeFood(this.x, this.y, 10);
+      this.grid.removeFood(gridX, gridY, 10);
       // change state to returning
       this.state = State.Returning;
+      this.angle += 180;
     }
   }
 
   checkHome() {
     // if (this.x == this.homeX && this.y == this.homeY) {
-      const distanceToHome = Math.sqrt(
-        Math.pow(this.x - this.homeX, 2) + Math.pow(this.y - this.homeY, 2)
-      );
+    const distanceToHome = Math.sqrt(
+      Math.pow(this.x - this.homeX, 2) + Math.pow(this.y - this.homeY, 2)
+    );
 
-      if (distanceToHome < 5) {
-        foodCollected += 10;
-        console.log(`HOME: ${foodCollected}`);
-        this.state = State.Seeking;
+    if (distanceToHome < 5) {
+      foodCollected += 10;
+      console.log(`HOME: ${foodCollected}`);
+      this.state = State.Seeking;
+      this.angle += 180;
     }
   }
 
