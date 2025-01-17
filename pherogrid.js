@@ -1,41 +1,55 @@
+// Class to represent and handle the pheromone grid.
 export const MAX_PHE = 128;
 
-export class Grid {
-  constructor(width, height) {
-    this.width = width;
-    this.height = height;
+const scale = 4;
 
-    this.grid = Array.from({ length: height }, () =>
-      Array.from({ length: width }, () => new Cell())
+
+
+export class PheromoneGrid {
+  constructor(width, height) {
+    this.width = Math.ceil(width / scale);
+    this.height = Math.ceil(height / scale);
+    this.actualWidth = width;
+    this.actualHeight = height;
+
+    this.foodTotal = 0;
+    this.foodCollected = 0;
+    
+    this.grid = Array.from({ length: this.height }, () =>
+      Array.from({ length: this.width }, () => new Cell())
     );
 
     this.addFoodClumps(3, 50, 10, 10);
   }
-
   addFoodClumps(numClumps, clumpSize, clumpSpread, foodAmount) {
     for (let i = 0; i < numClumps; i++) {
-      
+
       const centerX = Math.floor(Math.random() * this.width);
       const centerY = Math.floor(Math.random() * this.height);
-  
-      
+
+
       for (let j = 0; j < clumpSize; j++) {
         const offsetX = Math.floor(Math.random() * (2 * clumpSpread + 1)) - clumpSpread;
         const offsetY = Math.floor(Math.random() * (2 * clumpSpread + 1)) - clumpSpread;
-  
+
         const x = centerX + offsetX;
         const y = centerY + offsetY;
-  
-        
+
+
         if (this.isInBounds(x, y)) {
-          this.addFood(x, y, foodAmount );
+          // this.addFood(x, y, foodAmount);
+          this.grid[y][x].food += foodAmount;
+          this.foodTotal += foodAmount;
         }
       }
     }
   }
 
   getCell(x, y) {
-    return this.grid[y]?.[x] || null;
+    const gx = Math.floor(x/scale);
+    const gy = Math.floor(y/scale);
+
+    return this.grid[gy]?.[gx] || null;
   }
 
   isPassable(x, y) {
@@ -51,7 +65,7 @@ export class Grid {
     const cell = this.getCell(x, y);
     if (cell) {
       return cell.food;
-    } 
+    }
   }
 
   addFood(x, y, amount) {
@@ -88,9 +102,15 @@ export class Grid {
       cell.reducePheromone(type, amount);
     }
   }
+
+  updateFoodCollected(amount) {
+    this.foodCollected += amount;
+  }
+
+  getFoodCollected() {
+    return this.foodCollected;
+  }
 }
-
-
 
 class Cell {
   constructor() {

@@ -6,19 +6,19 @@ const State = {
   Returning: 'Returning',
 }
 
-// This shouldnt be here
+// Move to grid
 export let foodCollected = 0;
 
 let idCount = 0;
 
 export class Agent {
-  constructor(x, y, angle, energy, grid) {
+  constructor(x, y, energy, grid) {
     this.id = idCount++;
     this.x = x; // default 0
     this.y = y; // default 0
 
-    this.angle = angle;
-    this.velocity = 0.5;
+    this.angle = Math.random() * 360;
+    this.velocity = 1;
 
     this.vx = 0;
     this.vy = 0;
@@ -27,7 +27,7 @@ export class Agent {
 
     this.homeX = x;
     this.homeY = y;
-    this.energy = energy; // default to 500
+    this.energy = energy;
     this.grid = grid;
 
     this.state = State.Seeking;
@@ -38,16 +38,25 @@ export class Agent {
       this.move();
 
       if (this.state === State.Returning) {
-        // this.moveReturning();
         this.checkHome()
       } else {
-        // this.moveSeeking();
         this.checkFood();
       }
     }
   }
 
   move() {
+
+
+    if (this.isInBounds()) {
+      this.turn();
+      this.dropPheromone();
+    } else {
+      // this.turnOutOfBounds();
+      this.respawn();
+    }
+
+
     const rad = (this.angle * Math.PI) / 180;
 
     this.vx = Math.sin(rad) * this.velocity;
@@ -56,26 +65,64 @@ export class Agent {
     this.x += this.vx;
     this.y += this.vy;
 
-    this.turn();
-
     this.energy -= 1;
   }
 
-  moveReturning() {
-
+  isInBounds(margin = 0) {
+    return this.x >= margin && this.x < this.grid.actualWidth - margin && this.y >= margin && this.y < this.grid.actualHeight - margin;
   }
 
+  respawn() {
+    this.x = this.homeX;
+    this.y = this.homeY;
+
+    this.vx = 0;
+    this.vy = 0
+    this.angle = Math.random() * 360;
+
+    this.state = State.Seeking;
+  }
+  // turnOutOfBounds() {
+  //   const margin = 5;
+  //   let turned = false;
+
+  //   // Turn away from the left or right boundary
+  // if (this.x < margin) {
+  //   this.angle -= 2; // Turn to face downward (towards y-axis)
+  //   turned = true;
+  //   //return;
+  // } else if (this.x > this.grid.actualWidth - margin) {
+  //   this.angle -= 2; // Turn to face upward
+  //   turned = true;
+  //   //return;
+  // }
+
+  // // Turn away from the top or bottom boundary
+  // if (this.y < margin) {
+  //   this.angle -= 2; // Turn to face right
+  //   turned = true;
+  //   //return;
+  // } else if (this.y > this.grid.actualHeight - margin) {
+  //   this.angle -= 2; // Turn to face left
+  //   turned = true;
+  //   //return;
+  // }
+  // return turned; // Indicate if the agent's direction was adjusted
+  // }
+
+
+  // if food is detected on the right side, then veer right
+  // or if food is detected on the left side, then veer left
+  // we do this by imagining a circle of vision around the agent. 
+  // Everything behind it (more than 90 degrees away from the direction it is facing) 
+  // is ignored. THen the remain space is partition so that everything from 0 to -90 
+  // degrees is left and 0 to 90 degrees is right. Then we check all the coordinated 
+  // in these spaces to see if food is present.
+  
   turn() {
     // add some randomness to the direction
     this.angle += ((Math.random() * 5) - 2.5);
 
-    // if food is detected on the right side, then veer right
-    // or if food is detected on the left side, then veer left
-    // we do this by imagining a circle of vision around the agent. 
-    // Everything behind it (more than 90 degrees away from the direction it is facing) 
-    // is ignored. THen the remain space is partition so that everything from 0 to -90 
-    // degrees is left and 0 to 90 degrees is right. Then we check all the coordinated 
-    // in these spaces to see if food is present.
     const rad = (this.angle * Math.PI) / 180;
     const visionPoints = [];
 
@@ -120,11 +167,30 @@ export class Agent {
       }
     }
 
-    // Adjust angle based on detected food quantity
-    if (leftFood > rightFood) {
-      this.angle -= 5;
-    } else if (rightFood > leftFood) {
-      this.angle += 5;
+    if (leftFood > 0 || rightFood > 0) {
+      // Adjust angle based on detected food quantity
+      if (leftFood > rightFood) {
+        this.angle -= 5;
+      } else if (rightFood > leftFood) {
+        this.angle += 5;
+      }
+    } else {
+      // Havent found home, so check for highest pheromone
+      let maxPheromone = 0;
+      let bestAngleOffset = 0;
+
+      for (const point of visionPoints) {
+        const cell = this.grid.getCell(point.x, point.y);
+        if (cell && cell.pheromones.typeB > maxPheromone) {
+          maxPheromone = cell.pheromones.typeB;
+          bestAngleOffset = point.angleOffset;
+        }
+      }
+
+      if (maxPheromone > 0) {
+        this.angle += bestAngleOffset > 0 ? 5 : -5;
+      }
+
     }
   }
 
@@ -136,9 +202,35 @@ export class Agent {
         Math.abs(point.y - this.homeY) < 1
       ) {
         this.angle += point.angleOffset > 0 ? 5 : -5; // Turn toward home
-        break;
+        // break;
+        return;
       }
     }
+
+    // Havent found home, so check for highest pheromone
+    let maxPheromone = 0;
+    let bestAngleOffset = 0;
+
+    for (const point of visionPoints) {
+      const cell = this.grid.getCell(point.x, point.y);
+      if (cell && cell.pheromones.typeA > maxPheromone) {
+        maxPheromone = cell.pheromones.typeA;
+        bestAngleOffset = point.angleOffset;
+      }
+    }
+
+    if (maxPheromone > 20) {
+      this.angle += bestAngleOffset > 0 ? 2 : -2;
+    }
+  }
+
+  dropPheromone() {
+    if (this.state === State.Seeking) {
+      this.grid.addPheromone(this.x, this.y, "typeA", 5);
+    } else {
+      this.grid.addPheromone(this.x, this.y, "typeB", 5);
+    }
+
   }
 
   // If the cell at which the agent is has food, take that food and return home
@@ -149,11 +241,14 @@ export class Agent {
     const gridY = Math.round(this.y);
 
     if (this.grid.getFood(gridX, gridY) > 0) {
-      console.log("Food collected at:", gridX, gridY, "by", this.id)
-      // reduce food (take it)
+      // console.log("Food found at:", gridX, gridY, "by", this.id)
+      // reduce food (take it) (fixed value for now)
       this.grid.removeFood(gridX, gridY, 10);
       // change state to returning
       this.state = State.Returning;
+      // increase energy
+      this.energy += 500;
+
       this.angle += 180;
     }
   }
@@ -165,8 +260,10 @@ export class Agent {
     );
 
     if (distanceToHome < 5) {
-      foodCollected += 10;
-      console.log(`HOME: ${foodCollected}`);
+      // foodCollected += 10;
+      // console.log(`HOME: ${foodCollected}`);
+      this.grid.updateFoodCollected(10);
+      console.log("Food collected:", this.grid.getFoodCollected());
       this.state = State.Seeking;
       this.angle += 180;
     }
@@ -174,8 +271,8 @@ export class Agent {
 
   getColour() {
     if (this.state === State.Returning)
-      return "blue"
+      return `rgba(0, 0, 255, 0.8)` //"blue"
     else
-      return "black"
+      return `rgba(0, 0, 0, 0.8)` //"black"
   }
 }
