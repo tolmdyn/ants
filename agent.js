@@ -214,8 +214,8 @@ export class Agent {
     let bestAngleOffset = 0;
 
     for (const point of visionPoints) {
-      const p = this.grid.getPheromones(point.x, point.y, PheromoneType.TypeA);
-
+      const p = this.grid.getPheromone(point.x, point.y, PheromoneType.TypeA);
+      // console.log("p:", p)
       if (p > maxPheromone) {
         maxPheromone = p;
         bestAngleOffset = point.angleOffset;

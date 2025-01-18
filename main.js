@@ -5,7 +5,7 @@ import { Grid } from './grid.js'
 const canvas = document.getElementById("pixelCanvas");
 
 const gridSize = 512; 
-const numAgents = 100; //70
+const numAgents = 70; //70
 const scale = 4;
 
 canvas.width = gridSize;
@@ -15,8 +15,8 @@ const ctx = canvas.getContext("2d");
 
 const grid = new Grid(gridSize, gridSize);
 
-const homeX = Math.random() * gridSize; // gridSize / 2
-const homeY = Math.random() * gridSize; // gridSize / 2
+const homeX = gridSize / 2 // Math.random() * gridSize; 
+const homeY = gridSize / 2 // Math.random() * gridSize; 
 
 const agents = Array.from({ length: numAgents }, () => new Agent(homeX, homeY, 1500, grid));
 
