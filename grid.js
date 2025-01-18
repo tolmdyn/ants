@@ -125,7 +125,7 @@ class Cell {
   constructor() {
     this.isBlocked = false;
     this.food = 0;
-    this.pheromones = { typeA: 0, typeB: 0 } //typeA = visited(seeking), typeB = foodFound(returning) 
+    this.pheromones = { typeA: 0, typeB: 0 }
   }
 
   addPheromone(type, amount) {
