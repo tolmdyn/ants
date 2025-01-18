@@ -3,22 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Colony</title>
+  <title>Ants</title>
   <style>
+    body {
+      margin: 0; /* Removes default body margin */
+      display: flex; /* Use flexbox for centering */
+      flex-direction: column; /* Stack items vertically */
+      justify-content: center; /* Center horizontally */
+      align-items: center; /* Center vertically */
+      
+      height: 95vh; /* Full viewport height */
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0; /* Optional: Set a background color */
+      
+    }
     canvas {
       image-rendering: pixelated; /* Ensures crisp scaling for low-res images */
-      width: 640px; /* Display width (scaled up) */
-      height: 640px; /* Display height (scaled up) */
-      border: 1px solid black;
+      border: 1px solid black; /* Optional: Add a border around the canvas */
+      height: 100vh; /* Full viewport height */
     }
   </style>
 </head>
 <body>
-  <h1>Colony</h1>
-  <canvas id="pixelCanvas" width="160" height="160"></canvas>
-
-
-		<script type="module" src="main.js"></script>
-    <script type="module" src="agent.js"></script>
-  </body>
+  <h1>Ants</h1>
+  <canvas id="pixelCanvas"></canvas>
+	<script type="module" src="main.js"></script>
+  <div style="text-align: center; margin-top: 20px; font-size: 0.9em; color: #555;">
+    An ant pheromone simulator<br>
+    By <a href="https://github.com/tolmdyn" style="color: #007bff;">tolmdyn</a> | <a href="https://github.com/tolmdyn/ants" style="color: #007bff;">Source code</a>
+  </div>
+</body>
 </html>
