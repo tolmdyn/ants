@@ -1,23 +1,22 @@
 // Class to represent and handle the pheromone grid.
-export const MAX_PHE = 128;
+export const MAX_PHE = 256;
 
 const PheromoneType = {
   TypeA: 'typeA',
   TypeB: 'typeB',
 }
 
-const scale = 4;
-
 export class Grid {
-  constructor(width, height) {
+  constructor(width, height, scale) {
     this.width = Math.ceil(width / scale);
     this.height = Math.ceil(height / scale);
+    this.scale = scale;
     this.actualWidth = width;
     this.actualHeight = height;
 
     this.foodTotal = 0;
     this.foodCollected = 0;
-    
+
     this.grid = Array.from({ length: this.height }, () =>
       Array.from({ length: this.width }, () => new Cell())
     );
@@ -48,8 +47,8 @@ export class Grid {
   }
 
   getCell(x, y) {
-    const gx = Math.floor(x/scale);
-    const gy = Math.floor(y/scale);
+    const gx = Math.floor(x / this.scale);
+    const gy = Math.floor(y / this.scale);
 
     return this.grid[gy]?.[gx] || null;
   }

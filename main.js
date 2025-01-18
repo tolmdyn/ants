@@ -5,7 +5,7 @@ import { Grid } from './grid.js'
 const canvas = document.getElementById("pixelCanvas");
 
 const gridSize = 512; 
-const numAgents = 70; //70
+const numAgents = 70;
 const scale = 4;
 
 canvas.width = gridSize;
@@ -47,11 +47,11 @@ function draw() {
         ctx.fillRect(x, y, scale, scale);
       }
         // reduce the pheromone level per 'tick'
-        // this is done here to prevent multiple iterations over the grid
+        // this is currently done here to prevent multiple iterations over the grid
         grid.reducePheromone(x, y, 'typeA', 0.2);
         grid.reducePheromone(x, y, 'typeB', 0.1);
       
-
+      // draw food
       if (cell.food > 0) {
         ctx.fillStyle = `rgba(0, 255, 0, 0.8)`;
         ctx.fillRect(x, y, scale, scale);
