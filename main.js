@@ -13,7 +13,7 @@ canvas.height = gridSize;
 
 const ctx = canvas.getContext("2d");
 
-const grid = new Grid(gridSize, gridSize);
+const grid = new Grid(gridSize, gridSize, scale);
 
 const homeX = gridSize / 2 // Math.random() * gridSize; 
 const homeY = gridSize / 2 // Math.random() * gridSize; 
