@@ -1,9 +1,13 @@
 // "Vehicle" based agent with momentum and angle.
 
-
 const State = {
   Seeking: 'Seeking',
   Returning: 'Returning',
+}
+
+const PheromoneType = {
+  TypeA: 'typeA',
+  TypeB: 'typeB',
 }
 
 // Move to grid
@@ -46,13 +50,10 @@ export class Agent {
   }
 
   move() {
-
-
     if (this.isInBounds()) {
       this.turn();
       this.dropPheromone();
     } else {
-      // this.turnOutOfBounds();
       this.respawn();
     }
 
@@ -175,14 +176,15 @@ export class Agent {
         this.angle += 5;
       }
     } else {
-      // Havent found home, so check for highest pheromone
+      // Havent found food, so check for highest pheromone
       let maxPheromone = 0;
       let bestAngleOffset = 0;
 
       for (const point of visionPoints) {
-        const cell = this.grid.getCell(point.x, point.y);
-        if (cell && cell.pheromones.typeB > maxPheromone) {
-          maxPheromone = cell.pheromones.typeB;
+        const p = this.grid.getPheromone(point.x, point.y, PheromoneType.TypeB);
+
+        if (p > maxPheromone) {
+          maxPheromone = p;
           bestAngleOffset = point.angleOffset;
         }
       }
@@ -212,9 +214,10 @@ export class Agent {
     let bestAngleOffset = 0;
 
     for (const point of visionPoints) {
-      const cell = this.grid.getCell(point.x, point.y);
-      if (cell && cell.pheromones.typeA > maxPheromone) {
-        maxPheromone = cell.pheromones.typeA;
+      const p = this.grid.getPheromones(point.x, point.y, PheromoneType.TypeA);
+
+      if (p > maxPheromone) {
+        maxPheromone = p;
         bestAngleOffset = point.angleOffset;
       }
     }
@@ -226,42 +229,32 @@ export class Agent {
 
   dropPheromone() {
     if (this.state === State.Seeking) {
-      this.grid.addPheromone(this.x, this.y, "typeA", 5);
+      this.grid.addPheromone(this.x, this.y, PheromoneType.TypeA, 5);
     } else {
-      this.grid.addPheromone(this.x, this.y, "typeB", 5);
+      this.grid.addPheromone(this.x, this.y, PheromoneType.TypeB, 5);
     }
 
   }
 
   // If the cell at which the agent is has food, take that food and return home
   checkFood() {
-    // does cell have food
-    // console.log(`Agent position: (${this.x}, ${this.y})`);
     const gridX = Math.round(this.x);
     const gridY = Math.round(this.y);
 
     if (this.grid.getFood(gridX, gridY) > 0) {
-      // console.log("Food found at:", gridX, gridY, "by", this.id)
-      // reduce food (take it) (fixed value for now)
       this.grid.removeFood(gridX, gridY, 10);
-      // change state to returning
       this.state = State.Returning;
-      // increase energy
       this.energy += 500;
-
       this.angle += 180;
     }
   }
 
   checkHome() {
-    // if (this.x == this.homeX && this.y == this.homeY) {
     const distanceToHome = Math.sqrt(
       Math.pow(this.x - this.homeX, 2) + Math.pow(this.y - this.homeY, 2)
     );
 
     if (distanceToHome < 5) {
-      // foodCollected += 10;
-      // console.log(`HOME: ${foodCollected}`);
       this.grid.updateFoodCollected(10);
       console.log("Food collected:", this.grid.getFoodCollected());
       this.state = State.Seeking;
