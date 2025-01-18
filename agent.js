@@ -10,7 +10,6 @@ const PheromoneType = {
   TypeB: 'typeB',
 }
 
-// Move to grid
 export let foodCollected = 0;
 
 let idCount = 0;
@@ -18,8 +17,8 @@ let idCount = 0;
 export class Agent {
   constructor(x, y, energy, grid) {
     this.id = idCount++;
-    this.x = x; // default 0
-    this.y = y; // default 0
+    this.x = x;
+    this.y = y;
 
     this.angle = Math.random() * 360;
     this.velocity = 1;
@@ -56,7 +55,6 @@ export class Agent {
     } else {
       this.respawn();
     }
-
 
     const rad = (this.angle * Math.PI) / 180;
 
@@ -119,7 +117,7 @@ export class Agent {
   // is ignored. THen the remain space is partition so that everything from 0 to -90 
   // degrees is left and 0 to 90 degrees is right. Then we check all the coordinated 
   // in these spaces to see if food is present.
-  
+
   turn() {
     // add some randomness to the direction
     this.angle += ((Math.random() * 5) - 2.5);
@@ -129,7 +127,6 @@ export class Agent {
 
     for (let d = 1; d <= this.visionDistance; d++) {
       // scan a 90-degree arc in front (left and right)
-      // const offset = 90 / 2;
       for (let offset = -85; offset <= 85; offset += 5) {
         const scanAngle = rad + (offset * Math.PI) / 180;
         const scanX = Math.round(this.x + Math.sin(scanAngle) * d);
@@ -203,8 +200,7 @@ export class Agent {
         Math.abs(point.x - this.homeX) < 1 &&
         Math.abs(point.y - this.homeY) < 1
       ) {
-        this.angle += point.angleOffset > 0 ? 5 : -5; // Turn toward home
-        // break;
+        this.angle += point.angleOffset > 0 ? 5 : -5;
         return;
       }
     }
@@ -215,7 +211,6 @@ export class Agent {
 
     for (const point of visionPoints) {
       const p = this.grid.getPheromone(point.x, point.y, PheromoneType.TypeA);
-      // console.log("p:", p)
       if (p > maxPheromone) {
         maxPheromone = p;
         bestAngleOffset = point.angleOffset;
@@ -249,6 +244,7 @@ export class Agent {
     }
   }
 
+  // If agent is 'at' home, drop the food and start searching again
   checkHome() {
     const distanceToHome = Math.sqrt(
       Math.pow(this.x - this.homeX, 2) + Math.pow(this.y - this.homeY, 2)
@@ -264,8 +260,8 @@ export class Agent {
 
   getColour() {
     if (this.state === State.Returning)
-      return `rgba(0, 0, 255, 0.8)` //"blue"
+      return `rgba(0, 0, 255, 0.8)`;
     else
-      return `rgba(0, 0, 0, 0.8)` //"black"
+      return `rgba(0, 0, 0, 0.8)`;
   }
 }
