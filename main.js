@@ -71,9 +71,10 @@ const frameDuration = 1000 / fps;
 let lastFrameTime = 0;
 
 function update(timestamp) {
-  updateAgents();
+  // updateAgents();
   if (timestamp - lastFrameTime >= frameDuration) {
     lastFrameTime = timestamp;
+    updateAgents();
     draw();
   }
   requestAnimationFrame(update);
